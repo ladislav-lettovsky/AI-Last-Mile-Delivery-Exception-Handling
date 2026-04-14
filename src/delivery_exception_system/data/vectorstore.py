@@ -52,10 +52,11 @@ def get_retriever():
     device = _get_device()
     logger.info("Embedding device: %s", device)
 
-    # Suppress the safetensors "LOAD REPORT" that prints directly to stdout,
-    # bypassing Python's logging system entirely.
-    _real_stdout = sys.stdout
+    # Suppress the safetensors "LOAD REPORT" that uses raw print() to
+    # stdout/stderr, bypassing Python's logging system entirely.
+    _real_stdout, _real_stderr = sys.stdout, sys.stderr
     sys.stdout = io.StringIO()
+    sys.stderr = io.StringIO()
     try:
         embedding_model = HuggingFaceEmbeddings(
             model_name=settings.embedding_model,
@@ -63,6 +64,7 @@ def get_retriever():
         )
     finally:
         sys.stdout = _real_stdout
+        sys.stderr = _real_stderr
 
     persist_dir = str(settings.vectorstore_dir)
     hash_file = settings.vectorstore_dir / "pdf_hash.txt"
