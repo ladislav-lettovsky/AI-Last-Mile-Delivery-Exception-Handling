@@ -1,7 +1,10 @@
 """ChromaDB vector store creation with optional persistence."""
 
 import hashlib
+import io
 import logging
+import os
+import sys
 import time
 
 import torch
@@ -49,10 +52,17 @@ def get_retriever():
     device = _get_device()
     logger.info("Embedding device: %s", device)
 
-    embedding_model = HuggingFaceEmbeddings(
-        model_name=settings.embedding_model,
-        model_kwargs={"device": device},
-    )
+    # Suppress the safetensors "LOAD REPORT" that prints directly to stdout,
+    # bypassing Python's logging system entirely.
+    _real_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+    try:
+        embedding_model = HuggingFaceEmbeddings(
+            model_name=settings.embedding_model,
+            model_kwargs={"device": device},
+        )
+    finally:
+        sys.stdout = _real_stdout
 
     persist_dir = str(settings.vectorstore_dir)
     hash_file = settings.vectorstore_dir / "pdf_hash.txt"
