@@ -8,6 +8,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Suppress noisy third-party output at import time (before any model loads).
+# These must be set before sentence_transformers / transformers are imported.
+os.environ.setdefault("TQDM_DISABLE", "1")
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+
 
 @dataclass
 class Settings:
@@ -101,6 +107,9 @@ class Settings:
             os.environ["LANGCHAIN_API_KEY"] = self.langchain_api_key
         os.environ["LANGCHAIN_PROJECT"] = self.langchain_project
         os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+        # Suppress tqdm progress bars and transformers load reports
+        os.environ["TQDM_DISABLE"] = "1"
+        os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
 
 settings = Settings()

@@ -41,6 +41,8 @@ NOISY_LOGGERS = [
     "huggingface_hub",
     "urllib3",
     "torch",
+    "safetensors",
+    "tqdm",
 ]
 
 
