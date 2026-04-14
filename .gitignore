@@ -30,6 +30,9 @@ htmlcov/
 .vectorstore/
 *.db-journal
 
+# Run results
+results/
+
 # OS
 .DS_Store
 Thumbs.db

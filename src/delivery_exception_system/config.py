@@ -78,6 +78,16 @@ class Settings:
     max_loops: int = 2
     max_retries: int = 2
 
+    # Logging
+    log_level: str = field(
+        default_factory=lambda: os.environ.get("LOG_LEVEL", "WARNING")
+    )
+
+    # Output
+    results_dir: Path = field(
+        default_factory=lambda: Path(os.environ.get("RESULTS_DIR", "results"))
+    )
+
     def apply_env(self) -> None:
         """Push settings into environment variables for LangChain/LangSmith."""
         if self.openai_api_key:

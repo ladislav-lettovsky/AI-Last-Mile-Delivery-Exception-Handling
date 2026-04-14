@@ -14,11 +14,57 @@ from delivery_exception_system.evaluation.metrics import (
     compute_tool_call_accuracy,
 )
 from delivery_exception_system.graph import build_graph
+from delivery_exception_system.reporting.json_writer import write_json_results
 from delivery_exception_system.reporting.resolution import shipment_resolution
 from delivery_exception_system.reporting.summary import shipment_summary
 from delivery_exception_system.tools.delivery_logs import read_delivery_logs
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Third-party loggers that produce noisy output during normal operation.
+# In production these would go to a log aggregator; for local runs we
+# suppress anything below WARNING so the terminal stays clean.
+# ---------------------------------------------------------------------------
+NOISY_LOGGERS = [
+    "httpx",
+    "httpcore",
+    "sentence_transformers",
+    "transformers",
+    "chromadb",
+    "openai",
+    "langchain",
+    "langchain_core",
+    "langchain_openai",
+    "langchain_chroma",
+    "langsmith",
+    "huggingface_hub",
+    "urllib3",
+    "torch",
+]
+
+
+def _configure_logging(verbose: bool = False) -> None:
+    """Set up logging with proper level separation.
+
+    Application loggers follow LOG_LEVEL from the environment (default
+    WARNING).  When ``--verbose`` is passed, everything goes to DEBUG.
+    Third-party loggers are always clamped to WARNING unless verbose.
+    """
+    if verbose:
+        level = logging.DEBUG
+    else:
+        level = getattr(logging, settings.log_level.upper(), logging.WARNING)
+
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(name)s %(levelname)s %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
+    if not verbose:
+        for name in NOISY_LOGGERS:
+            logging.getLogger(name).setLevel(logging.WARNING)
 
 
 def process_shipment(app, shipment_id: str, raw_rows: list[dict], ground_truth: dict) -> dict:
@@ -80,8 +126,29 @@ def main():
         default=None,
         help="Process a specific shipment ID only",
     )
+
+    # --- Output control ---------------------------------------------------
     parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+        "--report",
+        action="store_true",
+        help="Print the detailed human-readable report to the terminal",
+    )
+    parser.add_argument(
+        "--json-output",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="Path for the JSON results file (default: results/run_<timestamp>.json)",
+    )
+    parser.add_argument(
+        "--no-json",
+        action="store_true",
+        help="Skip writing the JSON results file",
+    )
+
+    # --- Debugging / extras -----------------------------------------------
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging (all loggers to DEBUG)"
     )
     parser.add_argument(
         "--diagram",
@@ -95,13 +162,8 @@ def main():
     )
     args = parser.parse_args()
 
-    # Configure logging
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s %(name)s %(levelname)s %(message)s",
-        datefmt="%H:%M:%S",
-    )
+    # Configure logging — this is where the noise separation happens
+    _configure_logging(verbose=args.verbose)
 
     # Apply environment variables
     settings.apply_env()
@@ -145,7 +207,7 @@ def main():
         exc_rows = [r for r in rows if r["is_exception"] == "YES"]
         gt_consolidated[sid] = exc_rows[-1] if exc_rows else rows[0]
 
-    # Process shipments
+    # Process shipments — always print the compact summary table
     all_results = {}
     print_header = True
     for shipment_id in unique_shipment_ids:
@@ -156,14 +218,23 @@ def main():
         shipment_summary(shipment_id, result, ground_truth, print_header)
         print_header = False
 
-    # Print detailed reports
-    for shipment_id in unique_shipment_ids:
-        result = all_results[shipment_id]
-        gt = gt_consolidated[shipment_id]
-        shipment_resolution(shipment_id, result, gt)
+    # Detailed terminal report — only when --report is passed
+    if args.report:
+        for shipment_id in unique_shipment_ids:
+            result = all_results[shipment_id]
+            gt = gt_consolidated[shipment_id]
+            shipment_resolution(shipment_id, result, gt)
 
-    # Print aggregate metrics
+    # Always print aggregate metrics (compact, a few lines)
     print_aggregate_metrics(all_results, gt_consolidated)
+
+    # Structured JSON output — always written unless --no-json
+    if not args.no_json:
+        from pathlib import Path
+
+        json_path = Path(args.json_output) if args.json_output else None
+        result_path = write_json_results(all_results, gt_consolidated, json_path)
+        print(f"\nResults saved to {result_path}")
 
     # Optional: LangSmith dashboard
     if args.langsmith_dashboard:

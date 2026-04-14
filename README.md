@@ -83,7 +83,8 @@ ai-delivery-exception-system/
 │   │   └── dashboard.py               # Aggregate metrics
 │   ├── reporting/
 │   │   ├── summary.py                 # Compact tabular output
-│   │   └── resolution.py              # Detailed box-formatted reports
+│   │   ├── resolution.py              # Detailed box-formatted reports
+│   │   └── json_writer.py             # Structured JSON results output
 │   ├── langsmith_dashboard.py         # LangSmith cost and token dashboard
 │   ├── graph.py                       # LangGraph workflow construction
 │   └── runner.py                      # CLI entry point
@@ -92,6 +93,7 @@ ai-delivery-exception-system/
 │   ├── delivery_logs.csv              # 13 delivery log rows, 10 shipments
 │   ├── ground_truth.csv               # Hand-labeled expected outcomes
 │   └── exception_resolution_playbook.pdf  # 10-page operational playbook (v3.1)
+├── results/                           # JSON results from each run (git-ignored)
 ├── tests/                             # 43 pytest tests
 ├── pyproject.toml                     # Project metadata and dependencies
 ├── .env.example                       # Environment variable template
@@ -159,13 +161,22 @@ cp .env.example .env
 ## Usage
 
 ```bash
-# Run the full evaluation pipeline
+# Run the pipeline — writes JSON results to results/, prints compact summary
 python3 -m delivery_exception_system
+
+# Include the detailed human-readable report in terminal output
+python3 -m delivery_exception_system --report
+
+# Write JSON to a specific path
+python3 -m delivery_exception_system --json-output my_run.json
+
+# Skip JSON output entirely (terminal only)
+python3 -m delivery_exception_system --no-json --report
 
 # Process a specific shipment
 python3 -m delivery_exception_system --shipment-id SHP-005
 
-# Verbose logging
+# Verbose logging (all loggers including httpx, LangChain, etc.)
 python3 -m delivery_exception_system --verbose
 
 # Save workflow diagram
@@ -174,6 +185,17 @@ python3 -m delivery_exception_system --diagram
 # Include LangSmith cost dashboard
 python3 -m delivery_exception_system --langsmith-dashboard
 ```
+
+### Output Streams
+
+The system separates three output streams:
+
+| Stream | Default | Flag |
+|:---|:---|:---|
+| Compact summary table | Always printed | — |
+| Structured JSON results | `results/run_<timestamp>.json` | `--json-output PATH` or `--no-json` |
+| Detailed terminal report | Off | `--report` |
+| Third-party log noise | Suppressed (WARNING) | `--verbose` or `LOG_LEVEL=DEBUG` |
 
 ## Testing
 
