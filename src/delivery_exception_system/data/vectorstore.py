@@ -1,7 +1,6 @@
 """ChromaDB vector store creation with optional persistence."""
 
 import hashlib
-import io
 import logging
 import os
 import sys
@@ -52,19 +51,25 @@ def get_retriever():
     device = _get_device()
     logger.info("Embedding device: %s", device)
 
-    # Suppress the safetensors "LOAD REPORT" that uses raw print() to
-    # stdout/stderr, bypassing Python's logging system entirely.
-    _real_stdout, _real_stderr = sys.stdout, sys.stderr
-    sys.stdout = io.StringIO()
-    sys.stderr = io.StringIO()
+    # Suppress the safetensors "BertModel LOAD REPORT" which writes
+    # directly to OS file descriptors from C code, bypassing Python's
+    # sys.stdout/sys.stderr entirely.  We must redirect at the fd level.
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    saved_stdout_fd = os.dup(1)
+    saved_stderr_fd = os.dup(2)
+    os.dup2(devnull, 1)
+    os.dup2(devnull, 2)
+    os.close(devnull)
     try:
         embedding_model = HuggingFaceEmbeddings(
             model_name=settings.embedding_model,
             model_kwargs={"device": device},
         )
     finally:
-        sys.stdout = _real_stdout
-        sys.stderr = _real_stderr
+        os.dup2(saved_stdout_fd, 1)
+        os.dup2(saved_stderr_fd, 2)
+        os.close(saved_stdout_fd)
+        os.close(saved_stderr_fd)
 
     persist_dir = str(settings.vectorstore_dir)
     hash_file = settings.vectorstore_dir / "pdf_hash.txt"
