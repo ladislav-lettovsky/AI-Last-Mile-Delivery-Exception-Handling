@@ -1,7 +1,6 @@
 """Evaluation metrics: task completion, escalation accuracy, tool call accuracy."""
 
 import logging
-import re
 import sqlite3
 
 import pandas as pd

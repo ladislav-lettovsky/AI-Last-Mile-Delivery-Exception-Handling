@@ -24,7 +24,7 @@ def shipment_summary(sid: str, result: dict, gt: dict, print_header: bool = Fals
         f"| "
         f"{'Task':>{col_w['task']}} "
         f"{'Tools':>{col_w['tools']}} "
-        f"{'Coherance':>{col_w['coh']}} "
+        f"{'Coherence':>{col_w['coh']}} "
         f"{'\u23f1':>{col_w['lat']}} "
     )
     divider = "\u2500" * len(header)

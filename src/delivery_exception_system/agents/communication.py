@@ -67,7 +67,7 @@ def communication_agent_node(state: UnifiedAgentState) -> UnifiedAgentState:
 
     gen_llm = ChatOpenAI(model=settings.gen_model, temperature=settings.gen_temperature)
     structured_llm = gen_llm.with_structured_output(CommunicationOutput)
-    max_retries = settings.max_retries
+    max_retries = max(1, settings.max_retries)
     result = None
 
     for attempt in range(max_retries):

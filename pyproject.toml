@@ -2,7 +2,7 @@
 name = "delivery-exception-system"
 version = "0.1.0"
 description = "AI-powered last mile delivery exception handling with LangGraph multi-agent system"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "langchain-openai>=0.3",
     "langchain-core>=0.3",
@@ -18,12 +18,12 @@ dependencies = [
     "chromadb>=0.5",
     "sentence-transformers>=3.0",
     "python-dotenv>=1.0",
-    "ipython>=9.10.1",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "ipython>=9.10.1",
 ]
 
 [project.scripts]
@@ -39,3 +39,6 @@ packages = ["src/delivery_exception_system"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "integration: marks tests as integration tests requiring live LLM APIs (deselect with '-m not integration')",
+]
