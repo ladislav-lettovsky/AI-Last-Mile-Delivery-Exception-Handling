@@ -59,7 +59,7 @@ ai-delivery-exception-system/
 │   │   └── schemas.py                 # Pydantic output schemas for all agents
 │   ├── data/
 │   │   ├── loader.py                  # CSV, SQLite, and PDF data loading
-│   │   └── vectorstore.py            # ChromaDB with persistence and PDF hash caching
+│   │   └── vectorstore.py             # ChromaDB with persistence and PDF hash caching
 │   ├── tools/                         # LangChain @tool functions
 │   │   ├── delivery_logs.py           # Read delivery log CSV
 │   │   ├── customer_profile.py        # SQLite customer lookup with PII redaction
@@ -97,7 +97,7 @@ ai-delivery-exception-system/
 ├── tests/                             # 43 pytest tests
 ├── pyproject.toml                     # Project metadata and dependencies
 ├── .env.example                       # Environment variable template
-└── .github/workflows/ci.yml          # GitHub Actions CI
+└── .github/workflows/ci.yml           # GitHub Actions CI
 ```
 
 ## Data
