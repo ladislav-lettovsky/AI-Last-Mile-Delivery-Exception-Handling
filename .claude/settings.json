@@ -42,8 +42,8 @@
         "Write(.cursor/**)",
         "Write(.claude/**)",
         "Write(.scratch/**)",
-        "Bash(mkdir -p .scratch*)",
-        "Bash(rm .scratch/*)"
+        "Bash(mkdir -p *.scratch*)",
+        "Bash(rm *.scratch/*)"
       ],
       "ask": [
         "Bash(git commit*)",
